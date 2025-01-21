@@ -1,95 +1,245 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { LoadingButton } from "@mui/lab";
+import {
+  Button,
+  FilledInput,
+  FormControl,
+  IconButton,
+  InputAdornment,
+  InputLabel,
+  TextField,
+} from "@mui/material";
+import Visibility from "@mui/icons-material/Visibility";
+import VisibilityOff from "@mui/icons-material/VisibilityOff";
+import { Formik } from "formik";
+import React from "react";
+import ServiceMaster from "@/services/servicemaster";
+import { useStore } from "zustand";
+import ControllerLogin from "@/controllers/controllerlogin";
+import ControllerDetail from "@/controllers/controllerdetail";
+import ControllerCheck from "@/controllers/controllercheck";
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const { loginStatus } = useStore(ControllerLogin);
+  if (loginStatus) {
+    return <DashboardComponent />;
+  } else {
+    return <LoginComponent />;
+  }
+}
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+function DashboardComponent({}) {
+  const { detailGet, detailData, detailLoading } = useStore(ControllerDetail);
+  const { loginUsername } = useStore(ControllerLogin);
+  const { checkLoading, checkSet } = useStore(ControllerCheck);
+  React.useEffect(() => {
+    detailGet({
+      username: loginUsername,
+      origin: window.location.origin,
+    });
+  }, []);
+
+  function nullCheck(value = null) {
+    return value === null || value === undefined || value === ""
+      ? "Tidak tersedia"
+      : value;
+  }
+
+  if (detailLoading === true) {
+    return (
+      <div
+        style={{
+          padding: "10px",
+        }}
+      >
+        Loading...
+      </div>
+    );
+  } else {
+    return (
+      <div
+        style={{
+          padding: "10px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "10px",
+        }}
+      >
+        <div>
+          <div>Hai, {loginUsername}</div>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        <div>
+          <div>Check-In</div>
+          <div>waktu: {nullCheck(detailData?.checkIn)}</div>
+          <div>lokasi: {nullCheck(detailData?.checkInLoc)}</div>
+        </div>
+        <div>
+          <div>Check-Out</div>
+          <div>waktu: {nullCheck(detailData?.checkOut)}</div>
+          <div>lokasi: {nullCheck(detailData?.checkOutLoc)}</div>
+        </div>
+        <LoadingButton
+          onClick={() => {
+            detailGet({
+              username: loginUsername,
+              origin: window.location.origin,
+            });
+          }}
+          loading={detailLoading || checkLoading}
+          style={{
+            fontSize: "12px",
+          }}
+          variant="outlined"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+          Refresh
+        </LoadingButton>
+        {detailData?.checkInLoc === null && (
+          <LoadingButton
+            onClick={() => {
+              checkSet({
+                type: "in",
+                username: loginUsername,
+                origin: window.location.origin,
+              });
+            }}
+            loading={detailLoading || checkLoading}
+            style={{
+              fontSize: "12px",
+            }}
+            variant="contained"
+          >
+            CheckIn
+          </LoadingButton>
+        )}
+        {detailData?.checkInLoc !== null && (
+          <LoadingButton
+            onClick={() => {
+              checkSet({
+                type: "out",
+                username: loginUsername,
+                origin: window.location.origin,
+              });
+            }}
+            loading={detailLoading || checkLoading}
+            style={{
+              fontSize: "12px",
+            }}
+            variant="contained"
+          >
+            CheckOut
+          </LoadingButton>
+        )}
+      </div>
+    );
+  }
+}
+
+function LoginComponent({}) {
+  const { loginLoading, loginCheck } = useStore(ControllerLogin);
+  const [showPassword, setShowPassword] = React.useState(false);
+  const handleClickShowPassword = () => setShowPassword((show) => !show);
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
+  const handleMouseUpPassword = (event) => {
+    event.preventDefault();
+  };
+  return (
+    <Formik
+      initialValues={{ username: "", password: "" }}
+      onSubmit={(values) =>
+        loginCheck({
+          ...values,
+          origin: window.location.origin,
+        })
+      }
+    >
+      {({
+        values,
+        errors,
+        touched,
+        handleChange,
+        handleBlur,
+        handleSubmit,
+        isSubmitting,
+        /* and other goodies */
+      }) => (
+        <form
+          style={{
+            padding: "10px",
+            display: "flex",
+            flexDirection: "column",
+            gap: "5px",
+          }}
+          onSubmit={handleSubmit}
         >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
+          <TextField
+            name="username"
+            value={values.username}
+            onChange={handleChange}
+            style={{
+              width: "100%",
+            }}
+            slotProps={{
+              input: {
+                style: {
+                  fontSize: "12px", // Adjust font size of input text
+                },
+              },
+              inputLabel: {
+                style: {
+                  fontSize: "12px", // Adjust font size of label
+                },
+              },
+            }}
+            label="Username"
+            variant="filled"
           />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          <FormControl variant="filled">
+            <InputLabel
+              htmlFor="filled-adornment-password"
+              style={{ fontSize: "12px" }}
+            >
+              Password
+            </InputLabel>
+            <FilledInput
+              id="filled-adornment-password"
+              type={showPassword ? "text" : "password"}
+              style={{ fontSize: "12px" }}
+              name="password" // Add the name prop
+              value={values.password} // Bind the value to your form's state
+              onChange={handleChange} // Handle the change for the input
+              endAdornment={
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label={
+                      showPassword
+                        ? "hide the password"
+                        : "display the password"
+                    }
+                    onClick={handleClickShowPassword}
+                    onMouseDown={handleMouseDownPassword}
+                    onMouseUp={handleMouseUpPassword}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              }
+            />
+          </FormControl>
+          <LoadingButton
+            loading={loginLoading}
+            type="submit"
+            style={{
+              fontSize: "12px",
+            }}
+            variant="contained"
+          >
+            Simpan
+          </LoadingButton>
+        </form>
+      )}
+    </Formik>
   );
 }

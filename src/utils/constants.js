@@ -1,0 +1,9 @@
+class Constants {
+  static sessionId = "1177011CA4DDD34499D3D1422CE5DE80";
+  static loginId = "FFD957A9053445B1A7C96498B592D015";
+  static detailAbsentId = "F564D1D16D2848DD9385E5696CBC9914";
+  static inId = "6A8AC07CFC7E4942975F15CC0F0EF46E";
+  static outId = "6A8AC07CFC7E4942975F15CC0F0EF46E";
+}
+
+export default Constants;
